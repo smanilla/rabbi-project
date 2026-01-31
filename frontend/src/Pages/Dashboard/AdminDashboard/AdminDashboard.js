@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Container, Row, Col, Card } from "react-bootstrap";
+import { Link, useRouteMatch } from "react-router-dom";
 import API_BASE_URL from "../../../config/api";
 import "./AdminDashboard.css";
 
 const AdminDashboard = () => {
+  const { url } = useRouteMatch();
   const [stats, setStats] = useState({
     totalProducts: 0,
     totalOrders: 0,
@@ -21,37 +23,39 @@ const AdminDashboard = () => {
   const fetchStats = async () => {
     try {
       const [productsRes, ordersRes, usersRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/products`),
+        fetch(`${API_BASE_URL}/products?limit=1`),
         fetch(`${API_BASE_URL}/orders`),
-        fetch(`${API_BASE_URL}/addUserInfo`).catch(() => null),
+        fetch(`${API_BASE_URL}/users`),
       ]);
 
-      const products = await productsRes.json();
-      const orders = await ordersRes.json();
-      const users = usersRes ? await usersRes.json() : [];
+      const productsData = productsRes.ok ? await productsRes.json() : {};
+      const ordersData = ordersRes.ok ? await ordersRes.json() : [];
+      const usersData = usersRes.ok ? await usersRes.json() : [];
 
-      const productsList = products.products || products;
-      const ordersList = Array.isArray(orders) ? orders : [];
+      const totalProducts = productsData.pagination?.total ?? (Array.isArray(productsData.products) ? productsData.products.length : 0);
+      const ordersList = Array.isArray(ordersData) ? ordersData : [];
 
       const totalRevenue = ordersList.reduce((sum, order) => {
-        const orderTotal = order.items?.reduce(
-          (itemSum, item) => itemSum + (item.price || 0) * (item.quantity || 1),
-          order.total || 0
-        );
-        return sum + (orderTotal || 0);
+        const orderTotal = order.total != null
+          ? Number(order.total)
+          : (order.items || []).reduce(
+              (itemSum, item) => itemSum + (Number(item.price) || 0) * (Number(item.quantity) || 1),
+              0
+            );
+        return sum + orderTotal;
       }, 0);
 
       const pendingOrders = ordersList.filter(
-        (order) => order.status === "Pending"
+        (order) => (order.status || "").toLowerCase() === "pending"
       ).length;
       const completedOrders = ordersList.filter(
-        (order) => order.status === "Completed" || order.status === "Delivered"
+        (order) => ["completed", "delivered"].includes((order.status || "").toLowerCase())
       ).length;
 
       setStats({
-        totalProducts: productsList.length,
+        totalProducts,
         totalOrders: ordersList.length,
-        totalUsers: Array.isArray(users) ? users.length : 0,
+        totalUsers: Array.isArray(usersData) ? usersData.length : 0,
         totalRevenue: totalRevenue.toFixed(2),
         pendingOrders,
         completedOrders,
@@ -150,28 +154,28 @@ const AdminDashboard = () => {
               <Card.Body>
                 <Row>
                   <Col md={3} className="mb-3">
-                    <div className="quick-action-item">
+                    <Link to={`${url}/addService`} className="quick-action-item">
                       <div className="action-icon">➕</div>
                       <p>Add Product</p>
-                    </div>
+                    </Link>
                   </Col>
                   <Col md={3} className="mb-3">
-                    <div className="quick-action-item">
+                    <Link to={`${url}/manageOrder`} className="quick-action-item">
                       <div className="action-icon">📋</div>
                       <p>Manage Orders</p>
-                    </div>
+                    </Link>
                   </Col>
                   <Col md={3} className="mb-3">
-                    <div className="quick-action-item">
+                    <Link to={`${url}/manageProducts`} className="quick-action-item">
                       <div className="action-icon">🏷️</div>
-                      <p>Categories</p>
-                    </div>
+                      <p>Manage Products</p>
+                    </Link>
                   </Col>
                   <Col md={3} className="mb-3">
-                    <div className="quick-action-item">
+                    <Link to={`${url}/manageUser`} className="quick-action-item">
                       <div className="action-icon">👤</div>
                       <p>Users</p>
-                    </div>
+                    </Link>
                   </Col>
                 </Row>
               </Card.Body>

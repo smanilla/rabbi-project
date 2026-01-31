@@ -1,11 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./Dashboard.css";
-import { useEffect } from "react";
-import { Switch, Route, Link, useRouteMatch } from "react-router-dom";
+import { Switch, Route, NavLink, useRouteMatch } from "react-router-dom";
+import { Spinner } from "react-bootstrap";
 import MyOrder from "../MyOrder/MyOrder";
 import AddService from "../AddService/AddService";
 import ManageOrder from "../ManageOrder/ManageOrder";
 import ManageProducts from "../ManageProducts/ManageProducts";
+import ManageReview from "../ManageReview/ManageReview";
+import ManageUser from "../ManageUser/ManageUser";
 import AdminDashboard from "../AdminDashboard/AdminDashboard";
 import AddReview from "./../AddReview/AddReview";
 import MakeAdmin from "../MakeAdmin/MakeAdmin";
@@ -14,39 +16,28 @@ import Pay from "../Pay/Pay";
 import API_BASE_URL from "../../../config/api";
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, logOut } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   useEffect(() => {
     const checkAdminStatus = async () => {
-      // First check if role is already in user object (from login)
       if (user?.role === "admin") {
         setIsAdmin(true);
         setLoading(false);
         return;
       }
-      
       if (user?.email) {
         try {
           setLoading(true);
           const response = await fetch(`${API_BASE_URL}/checkAdmin/${user.email}`);
           const data = await response.json();
-          
-          console.log("Admin check response:", data); // Debug log
-          console.log("User object:", user); // Debug log
-          
-          // Check multiple possible response formats
-          if (
-            data.isAdmin === true || 
-            data.user?.role === "admin" || 
-            data[0]?.role === "admin" ||
-            (Array.isArray(data) && data.length > 0 && data[0].role === "admin")
-          ) {
-            setIsAdmin(true);
-          } else {
-            setIsAdmin(false);
-          }
+          const admin =
+            data.isAdmin === true ||
+            data.user?.role === "admin" ||
+            (Array.isArray(data) && data.length > 0 && data[0].role === "admin");
+          setIsAdmin(!!admin);
         } catch (error) {
           console.error("Error checking admin status:", error);
           setIsAdmin(false);
@@ -57,81 +48,95 @@ const Dashboard = () => {
         setLoading(false);
       }
     };
-    
     checkAdminStatus();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.email, user?.role]);
-  
-  let { path, url } = useRouteMatch();
-  
+
+  const { path, url } = useRouteMatch();
+
   if (loading) {
     return (
-      <div className="dashboard-container my-5">
-        <div className="text-center py-5">
-          <p>Loading dashboard...</p>
+      <div className="dashboard-wrapper">
+        <div className="dashboard-loading">
+          <Spinner animation="border" variant="primary" role="status" />
+          <p className="mt-3 mb-0 text-muted">Loading dashboard...</p>
         </div>
       </div>
     );
   }
-  
+
   return (
-    <div className="dashboard-container my-5">
-      <div className="row">
-        <div className="col-md-3">
-          <h5 className="text-center fw-bold fs-1 mb-4">
-            <i className="fas fa-tachometer-alt"></i> Dashboard
-          </h5>
-          <div className="dashboard-menu-container">
-            {/* Debug info */}
-            <div className="p-2 mb-2 bg-light rounded small" style={{fontSize: '12px', border: '1px solid #ddd'}}>
-              <strong>Debug Info:</strong><br/>
-              Email: {user?.email || 'N/A'}<br/>
-              Role: {user?.role || 'N/A'}<br/>
-              Admin Status: {isAdmin ? '✅ Yes' : '❌ No'}<br/>
-              {!isAdmin && user?.email === 'admin@drone.com' && (
-                <div className="mt-2 p-2 bg-warning text-dark rounded">
-                  ⚠️ You're logged in as admin but role not detected.<br/>
-                  Please <strong>logout and login again</strong> to refresh your session.
-                </div>
-              )}
+    <div className="dashboard-wrapper">
+      <button
+        type="button"
+        className="dashboard-sidebar-toggle"
+        onClick={() => setSidebarOpen((o) => !o)}
+        aria-label="Toggle menu"
+      >
+        <i className={`fas ${sidebarOpen ? "fa-times" : "fa-bars"}`} />
+      </button>
+      <aside className={`dashboard-sidebar ${sidebarOpen ? "dashboard-sidebar-open" : ""}`}>
+        <div className="dashboard-sidebar-inner">
+          <div className="dashboard-user-card">
+            <div className="dashboard-user-avatar">
+              <i className="fas fa-user" />
             </div>
-            
+            <h3 className="dashboard-user-name">{user?.displayName || user?.name || "User"}</h3>
+            <p className="dashboard-user-email">{user?.email || ""}</p>
+            <span className={`dashboard-user-badge ${isAdmin ? "dashboard-user-badge-admin" : ""}`}>
+              {isAdmin ? "Admin" : "User"}
+            </span>
+          </div>
+          <nav className="dashboard-nav">
+            <span className="dashboard-nav-title">Menu</span>
             {!isAdmin && (
               <>
-                <Link to={`${url}/myOrder`} className="dashboard-menu-item">
-                  <i className="fas fa-cart-arrow-down"></i> My Orders
-                </Link>
-                <Link to={`${url}/addReview`} className="dashboard-menu-item">
-                  <i className="fas fa-star"></i> Add Review
-                </Link>
-                <Link to={`${url}/pay`} className="dashboard-menu-item">
-                  <i className="fas fa-money-check-alt"></i> Pay
-                </Link>
+                <NavLink to={`${url}/myOrder`} className="dashboard-nav-item" activeClassName="dashboard-nav-item-active">
+                  <i className="fas fa-cart-arrow-down" /><span>My Orders</span>
+                </NavLink>
+                <NavLink to={`${url}/addReview`} className="dashboard-nav-item" activeClassName="dashboard-nav-item-active">
+                  <i className="fas fa-star" /><span>Add Review</span>
+                </NavLink>
+                <NavLink to={`${url}/pay`} className="dashboard-nav-item" activeClassName="dashboard-nav-item-active">
+                  <i className="fas fa-money-check-alt" /><span>Pay</span>
+                </NavLink>
               </>
             )}
-
             {isAdmin && (
               <>
-                <Link to={`${url}`} className="dashboard-menu-item">
-                  <i className="fas fa-chart-line"></i> Overview
-                </Link>
-                <Link to={`${url}/manageProducts`} className="dashboard-menu-item">
-                  <i className="fas fa-box"></i> Manage Products
-                </Link>
-                <Link to={`${url}/addService`} className="dashboard-menu-item">
-                  <i className="fas fa-plus-circle"></i> Add Product
-                </Link>
-                <Link to={`${url}/manageOrder`} className="dashboard-menu-item">
-                  <i className="fas fa-tasks"></i> Manage Orders
-                </Link>
-                <Link to={`${url}/makeAdmin`} className="dashboard-menu-item">
-                  <i className="fas fa-user-shield"></i> Make Admin
-                </Link>
+                <NavLink exact to={url} className="dashboard-nav-item" activeClassName="dashboard-nav-item-active">
+                  <i className="fas fa-chart-line" /><span>Overview</span>
+                </NavLink>
+                <NavLink to={`${url}/manageProducts`} className="dashboard-nav-item" activeClassName="dashboard-nav-item-active">
+                  <i className="fas fa-box" /><span>Manage Products</span>
+                </NavLink>
+                <NavLink to={`${url}/addService`} className="dashboard-nav-item" activeClassName="dashboard-nav-item-active">
+                  <i className="fas fa-plus-circle" /><span>Add Product</span>
+                </NavLink>
+                <NavLink to={`${url}/manageOrder`} className="dashboard-nav-item" activeClassName="dashboard-nav-item-active">
+                  <i className="fas fa-tasks" /><span>Manage Orders</span>
+                </NavLink>
+                <NavLink to={`${url}/manageReview`} className="dashboard-nav-item" activeClassName="dashboard-nav-item-active">
+                  <i className="fas fa-star-half-alt" /><span>Manage Reviews</span>
+                </NavLink>
+                <NavLink to={`${url}/manageUser`} className="dashboard-nav-item" activeClassName="dashboard-nav-item-active">
+                  <i className="fas fa-users" /><span>Manage Users</span>
+                </NavLink>
+                <NavLink to={`${url}/makeAdmin`} className="dashboard-nav-item" activeClassName="dashboard-nav-item-active">
+                  <i className="fas fa-user-shield" /><span>Make Admin</span>
+                </NavLink>
               </>
             )}
-          </div>
+            <div className="dashboard-nav-logout">
+              <button type="button" onClick={logOut} className="dashboard-nav-item dashboard-nav-item-logout">
+                <i className="fas fa-sign-out-alt" /><span>Logout</span>
+              </button>
+            </div>
+          </nav>
         </div>
-        <div className="col-md-9">
+      </aside>
+      <div className="dashboard-overlay" onClick={() => setSidebarOpen(false)} aria-hidden="true" />
+      <main className="dashboard-main">
+        <div className="dashboard-main-inner">
           <Switch>
             <Route exact path={`${path}`}>
               {isAdmin ? <AdminDashboard /> : <MyOrder />}
@@ -148,8 +153,14 @@ const Dashboard = () => {
             <Route exact path={`${path}/makeAdmin`}>
               <MakeAdmin></MakeAdmin>
             </Route>
+            <Route exact path={`${path}/manageUser`}>
+              <ManageUser></ManageUser>
+            </Route>
             <Route exact path={`${path}/manageOrder`}>
               <ManageOrder></ManageOrder>
+            </Route>
+            <Route exact path={`${path}/manageReview`}>
+              <ManageReview></ManageReview>
             </Route>
             <Route exact path={`${path}/manageProducts`}>
               <ManageProducts></ManageProducts>
@@ -159,7 +170,7 @@ const Dashboard = () => {
             </Route>
           </Switch>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

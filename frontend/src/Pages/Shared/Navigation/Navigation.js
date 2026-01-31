@@ -2,13 +2,20 @@ import React, { useState, useEffect, useCallback } from "react";
 import "./Navigation.css";
 import { Container, Nav, Navbar, Badge } from "react-bootstrap";
 import useAuth from "./../../../hooks/useAuth";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import API_BASE_URL from "../../../config/api";
 
 const Navigation = () => {
-  const { user, logOut } = useAuth();
+  const { user } = useAuth();
+  const location = useLocation();
+  const [expanded, setExpanded] = useState(false);
   const [cartCount, setCartCount] = useState(0);
   const [wishlistCount, setWishlistCount] = useState(0);
+
+  // Close mobile menu when route changes (e.g. after clicking a link)
+  useEffect(() => {
+    setExpanded(false);
+  }, [location.pathname]);
 
   const fetchCartCount = useCallback(async () => {
     if (!user?.email) return;
@@ -63,14 +70,35 @@ const Navigation = () => {
     };
   }, [user?.email, fetchCartCount]);
 
+  // Listen for wishlist update events (e.g. after adding from product card)
+  useEffect(() => {
+    const handleWishlistUpdate = () => {
+      if (user?.email) {
+        fetchWishlistCount();
+      }
+    };
+
+    window.addEventListener('wishlistUpdated', handleWishlistUpdate);
+    return () => {
+      window.removeEventListener('wishlistUpdated', handleWishlistUpdate);
+    };
+  }, [user?.email, fetchWishlistCount]);
+
   return (
-    <Navbar collapseOnSelect expand="lg" bg="white" variant="light" className="modern-navbar" sticky="top">
+    <Navbar
+      expand="lg"
+      bg="white"
+      variant="light"
+      className="modern-navbar"
+      sticky="top"
+      expanded={expanded}
+      onToggle={setExpanded}
+    >
       <Container>
-        <Navbar.Brand as={Link} to="/home" className="navbar-brand">
+        <Navbar.Brand as={Link} to="/home" className="navbar-brand" onClick={() => setExpanded(false)}>
           <img src="https://i.ibb.co/5TL68Fq/logo-black.png" alt="Drone" className="logo-img" />
-          <span className="brand-text">Drone</span>
         </Navbar.Brand>
-        <Navbar.Toggle aria-controls="responsive-navbar-nav" />
+        <Navbar.Toggle aria-controls="responsive-navbar-nav" aria-label="Toggle navigation" />
         <Navbar.Collapse id="responsive-navbar-nav">
           <Nav className="me-auto">
             <Nav.Link as={Link} to="/home" className="nav-link">
@@ -112,12 +140,6 @@ const Navigation = () => {
                 >
                   Dashboard
                 </Nav.Link>
-                <button onClick={logOut} className="btn-nav me-2">
-                  Logout
-                </button>
-                <Navbar.Text className="user-name">
-                  {user?.displayName || user?.name}
-                </Navbar.Text>
               </>
             ) : (
               <>

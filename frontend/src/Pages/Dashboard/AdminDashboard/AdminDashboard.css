@@ -104,12 +104,15 @@
 }
 
 .quick-action-item {
+  display: block;
   text-align: center;
   padding: 20px;
   background: #f8f9fa;
+  text-decoration: none;
+  color: inherit;
   border-radius: 8px;
-  cursor: pointer;
   transition: all 0.3s ease;
+  cursor: pointer;
 }
 
 .quick-action-item:hover {

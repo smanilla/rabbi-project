@@ -1,0 +1,15 @@
+.manage-user-actions {
+  white-space: nowrap;
+}
+
+.manage-user-actions .btn {
+  margin-bottom: 2px;
+}
+
+@media (max-width: 768px) {
+  .manage-user-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+}

@@ -29,6 +29,7 @@
     "express": "^4.17.1",
     "mongodb": "^4.1.4",
     "multer": "^2.0.2",
+    "nodemailer": "^7.0.13",
     "nodemon": "^2.0.15"
   }
 }

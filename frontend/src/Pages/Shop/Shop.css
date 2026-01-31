@@ -27,6 +27,17 @@
   padding-top: 20px;
 }
 
+/* Prevent products area and footer from jumping when search/filter changes */
+.shop-products-col {
+  min-height: 70vh;
+}
+
+.shop-products-inner {
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+}
+
 .shop-sidebar {
   background: white;
   border-radius: 8px;
@@ -89,6 +100,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  flex: 1;
   min-height: 400px;
 }
 
@@ -97,6 +109,11 @@
   padding: 60px 20px;
   background: white;
   border-radius: 8px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
 .no-products h3 {
@@ -106,6 +123,14 @@
 
 .no-products p {
   color: #666;
+}
+
+.shop-products-inner > .products-header {
+  flex-shrink: 0;
+}
+
+.shop-products-inner > .row {
+  flex: 1;
 }
 
 .products-header {

@@ -29,13 +29,16 @@
   color: #fff;
 }
 
-.btn {
+/* Scope to banner/slider only so other pages' buttons (e.g. Continue Shopping) stay visible */
+.slider-title .btn,
+.carousel .btn {
   color: #fff;
   border: 3px solid #fff;
   border-radius: 0;
 }
 
-.btn:hover {
+.slider-title .btn:hover,
+.carousel .btn:hover {
   border: 3px solid yellow;
   color: yellow;
 }

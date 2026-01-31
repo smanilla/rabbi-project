@@ -1,11 +1,13 @@
 const express = require("express");
 const { MongoClient, ObjectId } = require("mongodb");
+const crypto = require("crypto");
 require("dotenv").config();
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const nodemailer = require("nodemailer");
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -352,6 +354,14 @@ app.post("/orders", checkDatabase, async (req, res) => {
       );
     }
     
+    // Send order confirmation & invoice email (non-blocking; order still succeeds if email fails)
+    const recipientEmail = order.shippingAddress?.email || order.email;
+    if (recipientEmail) {
+      sendOrderConfirmationEmail(recipientEmail, orderData).catch((err) =>
+        console.error("Order email error:", err.message)
+      );
+    }
+    
     console.log("Order created:", result.insertedId);
     res.json({ 
       ...result, 
@@ -543,6 +553,33 @@ app.get("/ratings", checkDatabase, async (req, res) => {
   }
 });
 
+// DELETE Rating/Review (admin)
+app.delete("/ratings/:id", checkDatabase, async (req, res) => {
+  try {
+    const collections = getCollections();
+    if (!collections) {
+      return res.status(503).json({ error: "Database not connected" });
+    }
+    const { ratingCollection } = collections;
+    const { id } = req.params;
+
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid review ID" });
+    }
+
+    const result = await ratingCollection.deleteOne({ _id: new ObjectId(id) });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: "Review not found" });
+    }
+
+    res.json({ success: true, message: "Review deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting rating:", error);
+    res.status(500).json({ error: "Failed to delete review" });
+  }
+});
+
 // POST User Info
 app.post("/addUserInfo", checkDatabase, async (req, res) => {
   try {
@@ -651,15 +688,229 @@ app.get("/checkAdmin/:email", checkDatabase, async (req, res) => {
   }
 });
 
+// ========== EMAIL VERIFICATION ==========
+
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+const VERIFY_EXPIRY_HOURS = 24;
+
+function getEmailTransporter() {
+  const user = process.env.SMTP_USER || process.env.GMAIL_USER;
+  const pass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD;
+  if (user && pass) {
+    return nodemailer.createTransport({
+      service: process.env.SMTP_SERVICE || "gmail",
+      auth: { user, pass },
+    });
+  }
+  return null;
+}
+
+const SITE_NAME = process.env.SITE_NAME || "Drone";
+const SITE_DESCRIPTION = process.env.SITE_DESCRIPTION || "Your trusted destination for drones, cameras, and aerial solutions.";
+
+async function sendVerificationEmail(email, name, token) {
+  const transporter = getEmailTransporter();
+  if (!transporter) {
+    throw new Error("EMAIL_NOT_CONFIGURED");
+  }
+
+  const verifyUrl = `${FRONTEND_URL}/verify-email?token=${token}`;
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify your email - ${SITE_NAME}</title>
+</head>
+<body style="margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background-color:#f4f4f5;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f4f4f5;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.08);overflow:hidden;">
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);padding:32px 40px;text-align:center;">
+              <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:700;letter-spacing:-0.5px;">${SITE_NAME}</h1>
+              <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;line-height:1.4;">${SITE_DESCRIPTION}</p>
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px;">
+              <p style="margin:0 0 16px;color:#333;font-size:16px;line-height:1.6;">Hi ${(name || "User").replace(/</g, "&lt;")},</p>
+              <p style="margin:0 0 24px;color:#555;font-size:15px;line-height:1.6;">Thanks for signing up. Please verify your email address by clicking the button below so you can access your account.</p>
+              <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 24px;">
+                <tr>
+                  <td>
+                    <a href="${verifyUrl}" style="display:inline-block;padding:14px 32px;background:#0d6efd;color:#ffffff;text-decoration:none;font-size:16px;font-weight:600;border-radius:8px;">Verify Email</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:0 0 8px;color:#888;font-size:13px;">Or copy and paste this link into your browser:</p>
+              <p style="margin:0 0 24px;word-break:break-all;color:#0d6efd;font-size:13px;">${verifyUrl}</p>
+              <p style="margin:0;color:#888;font-size:13px;">This link expires in ${VERIFY_EXPIRY_HOURS} hours.</p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="background:#f8f9fa;padding:24px 40px;border-top:1px solid #eee;">
+              <p style="margin:0 0 8px;color:#666;font-size:13px;line-height:1.5;">You received this email because you signed up at <strong>${SITE_NAME}</strong>.</p>
+              <p style="margin:0;color:#999;font-size:12px;">If you did not create an account, you can safely ignore this email.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM || process.env.SMTP_USER || process.env.GMAIL_USER || `"${SITE_NAME}" <noreply@drone.com>`,
+    to: email,
+    subject: `Verify your email - ${SITE_NAME}`,
+    html,
+  });
+}
+
+// Send order confirmation & invoice email
+async function sendOrderConfirmationEmail(toEmail, orderData) {
+  const transporter = getEmailTransporter();
+  if (!transporter || !toEmail) return;
+
+  const items = orderData.items || [];
+  const shipping = orderData.shippingAddress || {};
+  const payment = orderData.payment || {};
+  const trackingNumber = orderData.trackingNumber || "";
+  const orderDate = orderData.createdAt
+    ? new Date(orderData.createdAt).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })
+    : new Date().toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
+  const subtotal = Number(orderData.subtotal) || 0;
+  const shippingCost = Number(orderData.shippingCost) || 0;
+  const total = Number(orderData.total) || subtotal + shippingCost;
+
+  const itemsRows = items
+    .map(
+      (item) => `
+    <tr>
+      <td style="padding:12px;border-bottom:1px solid #eee;color:#333;">${(item.title || "Item").replace(/</g, "&lt;")}</td>
+      <td style="padding:12px;border-bottom:1px solid #eee;text-align:center;">${item.quantity || 1}</td>
+      <td style="padding:12px;border-bottom:1px solid #eee;text-align:right;">৳${Number(item.price || 0).toLocaleString("en-BD")}</td>
+      <td style="padding:12px;border-bottom:1px solid #eee;text-align:right;">৳${(Number(item.price || 0) * (item.quantity || 1)).toLocaleString("en-BD")}</td>
+    </tr>`
+    )
+    .join("");
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Confirmation - ${SITE_NAME}</title>
+</head>
+<body style="margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background-color:#f4f4f5;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f4f4f5;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.08);overflow:hidden;">
+          <tr>
+            <td style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);padding:28px 40px;text-align:center;">
+              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">${SITE_NAME}</h1>
+              <p style="margin:6px 0 0;color:rgba(255,255,255,0.9);font-size:14px;">Order Confirmation & Invoice</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px 40px;">
+              <p style="margin:0 0 20px;color:#333;font-size:16px;">Thank you for your order. Below are your order details.</p>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:24px;background:#f8f9fa;border-radius:8px;padding:16px;">
+                <tr>
+                  <td style="padding:4px 0;"><strong style="color:#555;">Order / Tracking:</strong></td>
+                  <td style="padding:4px 0;color:#0d6efd;font-weight:600;">${trackingNumber}</td>
+                </tr>
+                <tr>
+                  <td style="padding:4px 0;"><strong style="color:#555;">Date:</strong></td>
+                  <td style="padding:4px 0;">${orderDate}</td>
+                </tr>
+                <tr>
+                  <td style="padding:4px 0;"><strong style="color:#555;">Payment:</strong></td>
+                  <td style="padding:4px 0;">${(payment.method || "N/A").replace(/</g, "&lt;")}</td>
+                </tr>
+              </table>
+              <h3 style="margin:0 0 12px;color:#333;font-size:16px;">Shipping Address</h3>
+              <p style="margin:0 0 20px;color:#555;font-size:14px;line-height:1.6;">
+                ${(shipping.fullName || "").replace(/</g, "&lt;")}<br/>
+                ${(shipping.address || "").replace(/</g, "&lt;")}<br/>
+                ${(shipping.city || "").replace(/</g, "&lt;")}${shipping.postalCode ? " - " + shipping.postalCode : ""}<br/>
+                ${(shipping.country || "").replace(/</g, "&lt;")}<br/>
+                ${(shipping.phone || "").replace(/</g, "&lt;")}
+              </p>
+              <h3 style="margin:0 0 12px;color:#333;font-size:16px;">Order Items</h3>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #eee;border-radius:8px;margin-bottom:20px;">
+                <thead>
+                  <tr style="background:#f8f9fa;">
+                    <th style="padding:12px;text-align:left;border-bottom:1px solid #eee;color:#555;font-size:13px;">Product</th>
+                    <th style="padding:12px;text-align:center;border-bottom:1px solid #eee;color:#555;font-size:13px;">Qty</th>
+                    <th style="padding:12px;text-align:right;border-bottom:1px solid #eee;color:#555;font-size:13px;">Unit Price</th>
+                    <th style="padding:12px;text-align:right;border-bottom:1px solid #eee;color:#555;font-size:13px;">Total</th>
+                  </tr>
+                </thead>
+                <tbody>${itemsRows}</tbody>
+              </table>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:16px;">
+                <tr><td style="padding:6px 0;color:#555;">Subtotal</td><td style="padding:6px 0;text-align:right;">৳${subtotal.toLocaleString("en-BD")}</td></tr>
+                <tr><td style="padding:6px 0;color:#555;">Shipping</td><td style="padding:6px 0;text-align:right;">৳${shippingCost.toLocaleString("en-BD")}</td></tr>
+                <tr style="border-top:2px solid #333;"><td style="padding:12px 0;font-weight:700;color:#333;">Total</td><td style="padding:12px 0;text-align:right;font-weight:700;">৳${total.toLocaleString("en-BD")}</td></tr>
+              </table>
+              ${orderData.notes ? `<p style="margin:0;color:#888;font-size:13px;"><strong>Note:</strong> ${(orderData.notes || "").replace(/</g, "&lt;")}</p>` : ""}
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#f8f9fa;padding:20px 40px;border-top:1px solid #eee;">
+              <p style="margin:0;color:#666;font-size:13px;">You received this email because you placed an order at <strong>${SITE_NAME}</strong>.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+  try {
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM || process.env.SMTP_USER || process.env.GMAIL_USER || `"${SITE_NAME}" <noreply@drone.com>`,
+      to: toEmail,
+      subject: `Order Confirmation - ${trackingNumber} - ${SITE_NAME}`,
+      html,
+    });
+    console.log("Order confirmation email sent to:", toEmail);
+  } catch (err) {
+    console.error("Failed to send order confirmation email:", err.message);
+  }
+}
+
 // ========== AUTHENTICATION ENDPOINTS ==========
 
-// Register new user (Simple email/password signup)
+// Register new user (with real email verification)
 app.post("/register", checkDatabase, async (req, res) => {
   try {
     const collections = getCollections();
     if (!collections) {
       return res.status(503).json({ error: "Database not connected" });
     }
+
+    // Require email service for real verification emails
+    if (!getEmailTransporter()) {
+      return res.status(503).json({
+        error: "Email service is not configured. Verification emails cannot be sent. Please contact the administrator.",
+        code: "EMAIL_NOT_CONFIGURED",
+      });
+    }
+
     const { authCollection, userCollection } = collections;
     const { email, password, name } = req.body;
     
@@ -683,11 +934,18 @@ app.post("/register", checkDatabase, async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user in auth collection
+    // Verification token (expires in 24h)
+    const emailVerifyToken = crypto.randomBytes(32).toString("hex");
+    const emailVerifyExpires = new Date(Date.now() + VERIFY_EXPIRY_HOURS * 60 * 60 * 1000);
+
+    // Create user in auth collection (unverified)
     const authResult = await authCollection.insertOne({
       email,
       password: hashedPassword,
       name,
+      emailVerified: false,
+      emailVerifyToken,
+      emailVerifyExpires,
       createdAt: new Date()
     });
 
@@ -699,18 +957,114 @@ app.post("/register", checkDatabase, async (req, res) => {
       createdAt: new Date()
     });
 
+    // Send real verification email
+    await sendVerificationEmail(email, name, emailVerifyToken);
+
     res.json({ 
       success: true, 
-      message: "User registered successfully",
-      userId: authResult.insertedId
+      message: "Registration successful. Please check your email to verify your account.",
+      userId: authResult.insertedId,
+      emailSent: true
     });
   } catch (error) {
     console.error("Registration error:", error);
+    if (error.message === "EMAIL_NOT_CONFIGURED") {
+      return res.status(503).json({
+        error: "Email service is not configured. Please contact the administrator.",
+        code: "EMAIL_NOT_CONFIGURED",
+      });
+    }
     res.status(500).json({ error: "Registration failed" });
   }
 });
 
-// Login user (Simple email/password signin)
+// Verify email (user clicks link in email)
+app.get("/verify-email/:token", checkDatabase, async (req, res) => {
+  try {
+    const collections = getCollections();
+    if (!collections) {
+      return res.status(503).json({ error: "Database not connected" });
+    }
+    const { authCollection } = collections;
+    const { token } = req.params;
+
+    const auth = await authCollection.findOne({
+      emailVerifyToken: token,
+      emailVerifyExpires: { $gt: new Date() },
+    });
+
+    if (!auth) {
+      return res.status(400).json({ error: "Invalid or expired verification link. Please request a new one." });
+    }
+
+    await authCollection.updateOne(
+      { email: auth.email },
+      {
+        $set: { emailVerified: true, updatedAt: new Date() },
+        $unset: { emailVerifyToken: "", emailVerifyExpires: "" },
+      }
+    );
+
+    res.json({
+      success: true,
+      message: "Email verified successfully. You can now log in.",
+    });
+  } catch (error) {
+    console.error("Verify email error:", error);
+    res.status(500).json({ error: "Verification failed" });
+  }
+});
+
+// Resend verification email
+app.post("/resend-verification-email", checkDatabase, async (req, res) => {
+  try {
+    const collections = getCollections();
+    if (!collections) {
+      return res.status(503).json({ error: "Database not connected" });
+    }
+    if (!getEmailTransporter()) {
+      return res.status(503).json({
+        error: "Email service is not configured. Please contact the administrator.",
+        code: "EMAIL_NOT_CONFIGURED",
+      });
+    }
+
+    const { authCollection } = collections;
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+
+    const auth = await authCollection.findOne({ email });
+    if (!auth) {
+      return res.status(404).json({ error: "No account found with this email" });
+    }
+    if (auth.emailVerified) {
+      return res.status(400).json({ error: "Email is already verified. You can log in." });
+    }
+
+    const emailVerifyToken = crypto.randomBytes(32).toString("hex");
+    const emailVerifyExpires = new Date(Date.now() + VERIFY_EXPIRY_HOURS * 60 * 60 * 1000);
+
+    await authCollection.updateOne(
+      { email },
+      { $set: { emailVerifyToken, emailVerifyExpires, updatedAt: new Date() } }
+    );
+
+    await sendVerificationEmail(email, auth.name, emailVerifyToken);
+
+    res.json({
+      success: true,
+      message: "Verification email sent. Please check your inbox.",
+    });
+  } catch (error) {
+    console.error("Resend verification error:", error);
+    res.status(500).json({ error: "Failed to send verification email" });
+  }
+});
+
+// Login user (requires verified email)
 app.post("/login", checkDatabase, async (req, res) => {
   try {
     const collections = getCollections();
@@ -737,8 +1091,24 @@ app.post("/login", checkDatabase, async (req, res) => {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
+    // Require email verification (allow legacy users who have no emailVerified field)
+    if (user.emailVerified === false) {
+      return res.status(403).json({
+        error: "Please verify your email before logging in. Check your inbox or request a new verification link.",
+        code: "EMAIL_NOT_VERIFIED",
+      });
+    }
+
     // Get user info
     const userInfo = await userCollection.findOne({ email });
+
+    // Block deactivated accounts
+    if (userInfo && userInfo.active === false) {
+      return res.status(403).json({
+        error: "Your account has been deactivated. Please contact support.",
+        code: "ACCOUNT_DEACTIVATED",
+      });
+    }
 
     res.json({
       success: true,
@@ -773,6 +1143,90 @@ app.get("/user/:email", checkDatabase, async (req, res) => {
   } catch (error) {
     console.error("Get user error:", error);
     res.status(500).json({ error: "Failed to get user" });
+  }
+});
+
+// ========== MANAGE USERS (admin) ==========
+
+// List all users (for admin manage users)
+app.get("/users", checkDatabase, async (req, res) => {
+  try {
+    const collections = getCollections();
+    if (!collections) {
+      return res.status(503).json({ error: "Database not connected" });
+    }
+    const { userCollection } = collections;
+    const users = await userCollection
+      .find({})
+      .sort({ createdAt: -1 })
+      .toArray();
+    // Return without sensitive data; include active (default true if missing)
+    const list = users.map((u) => ({
+      _id: u._id,
+      email: u.email,
+      name: u.name,
+      role: u.role || "user",
+      active: u.active !== false,
+      createdAt: u.createdAt,
+      updatedAt: u.updatedAt,
+    }));
+    res.json(list);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
+});
+
+// Update user status (activate/deactivate)
+app.put("/users/status", checkDatabase, async (req, res) => {
+  try {
+    const collections = getCollections();
+    if (!collections) {
+      return res.status(503).json({ error: "Database not connected" });
+    }
+    const { userCollection } = collections;
+    const { email, active } = req.body;
+    if (!email || typeof active !== "boolean") {
+      return res.status(400).json({ error: "Email and active (boolean) are required" });
+    }
+    const result = await userCollection.updateOne(
+      { email },
+      { $set: { active, updatedAt: new Date() } }
+    );
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.json({ success: true, message: active ? "User activated" : "User deactivated" });
+  } catch (error) {
+    console.error("Error updating user status:", error);
+    res.status(500).json({ error: "Failed to update user status" });
+  }
+});
+
+// Delete user (removes from auth, users, cart, wishlist)
+app.delete("/users/:email", checkDatabase, async (req, res) => {
+  try {
+    const collections = getCollections();
+    if (!collections) {
+      return res.status(503).json({ error: "Database not connected" });
+    }
+    const { authCollection, userCollection, cartCollection, wishlistCollection } = collections;
+    const email = decodeURIComponent(req.params.email);
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+    const userExists = await userCollection.findOne({ email }) || await authCollection.findOne({ email });
+    if (!userExists) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    await authCollection.deleteOne({ email });
+    await userCollection.deleteOne({ email });
+    await cartCollection.deleteOne({ email });
+    await wishlistCollection.deleteOne({ email });
+    res.json({ success: true, message: "User deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    res.status(500).json({ error: "Failed to delete user" });
   }
 });
 
@@ -1184,13 +1638,18 @@ app.get("/orders/:id/details", checkDatabase, async (req, res) => {
 // ========== DATABASE CONNECTION ==========
 
 async function run() {
+  const dbName = process.env.DB_NAME || "drone";
+  const displayUri = (process.env.MONGODB_URI || `mongodb://${process.env.DB_HOST || "localhost"}:${process.env.DB_PORT || "27017"}`)
+    .replace(/\/\/([^:]+):([^@]+)@/, "//$1:****@"); // hide password in logs
+  console.log("🔄 Connecting to MongoDB:", displayUri);
   try {
     await client.connect();
-    database = client.db(process.env.DB_NAME || "drone");
+    database = client.db(dbName);
     console.log("✅ Connected to MongoDB");
-    console.log("📦 Database:", process.env.DB_NAME || "drone");
+    console.log("📦 Database:", dbName);
   } catch (error) {
-    console.error("❌ MongoDB connection error:", error);
+    console.error("❌ MongoDB connection error:", error.message);
+    console.error("   Make sure MongoDB is running (local or Atlas) and the URI in .env is correct.");
   }
 }
 

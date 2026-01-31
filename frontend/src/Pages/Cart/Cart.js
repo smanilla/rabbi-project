@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Container, Row, Col, Table, Button, Spinner, Alert } from "react-bootstrap";
+import { Container, Row, Col, Table, Button, Spinner, Alert, Modal } from "react-bootstrap";
 import { useHistory } from "react-router-dom";
 import useAuth from "../../hooks/useAuth";
 import API_BASE_URL from "../../config/api";
+import { toast } from "../../components/Toast/Toast";
 import "./Cart.css";
 
 const Cart = () => {
@@ -12,6 +13,7 @@ const Cart = () => {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState("");
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const fetchCart = useCallback(async () => {
     if (!user?.email) {
@@ -87,7 +89,7 @@ const Cart = () => {
       window.dispatchEvent(new CustomEvent('cartUpdated'));
     } catch (error) {
       console.error("Error updating quantity:", error);
-      alert("Failed to update quantity. Please try again.");
+      toast("Failed to update quantity. Please try again.", "error");
     } finally {
       setUpdating(false);
     }
@@ -116,7 +118,7 @@ const Cart = () => {
       window.dispatchEvent(new CustomEvent('cartUpdated'));
     } catch (error) {
       console.error("Error removing item:", error);
-      alert("Failed to remove item. Please try again.");
+      toast("Failed to remove item. Please try again.", "error");
     } finally {
       setUpdating(false);
     }
@@ -124,8 +126,12 @@ const Cart = () => {
 
   const clearCart = async () => {
     if (!user?.email) return;
-    if (!window.confirm("Are you sure you want to clear your cart?")) return;
+    setShowClearConfirm(true);
+  };
 
+  const confirmClearCart = async () => {
+    if (!user?.email) return;
+    setShowClearConfirm(false);
     try {
       setUpdating(true);
       const response = await fetch(`${API_BASE_URL}/cart/clear/${user.email}`, {
@@ -138,9 +144,10 @@ const Cart = () => {
 
       setCartItems([]);
       window.dispatchEvent(new CustomEvent('cartUpdated'));
+      toast("Cart cleared.", "success");
     } catch (error) {
       console.error("Error clearing cart:", error);
-      alert("Failed to clear cart. Please try again.");
+      toast("Failed to clear cart. Please try again.", "error");
     } finally {
       setUpdating(false);
     }
@@ -272,6 +279,27 @@ const Cart = () => {
                 <Button variant="outline-danger" onClick={clearCart} disabled={updating}>
                   Clear Cart
                 </Button>
+                <Modal
+                  show={showClearConfirm}
+                  onHide={() => setShowClearConfirm(false)}
+                  centered
+                  className="cart-clear-modal"
+                >
+                  <Modal.Header closeButton>
+                    <Modal.Title>Clear cart?</Modal.Title>
+                  </Modal.Header>
+                  <Modal.Body>
+                    Are you sure you want to remove all items from your cart? This cannot be undone.
+                  </Modal.Body>
+                  <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowClearConfirm(false)}>
+                      Cancel
+                    </Button>
+                    <Button variant="danger" onClick={confirmClearCart} disabled={updating}>
+                      {updating ? "Clearing…" : "Clear cart"}
+                    </Button>
+                  </Modal.Footer>
+                </Modal>
               </Col>
               <Col lg={4}>
                 <div className="cart-summary">

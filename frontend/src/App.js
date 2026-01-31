@@ -16,14 +16,20 @@ import About from "./Pages/About/About";
 import Cart from "./Pages/Cart/Cart";
 import Checkout from "./Pages/Checkout/Checkout";
 import OrderSuccess from "./Pages/OrderSuccess/OrderSuccess";
+import Wishlist from "./Pages/Wishlist/Wishlist";
+import VerifyEmail from "./Pages/Login/VerifyEmail/VerifyEmail";
+import ProductDetail from "./Pages/ProductDetail/ProductDetail";
 import NotFound from "./Pages/NotFound/NotFound";
+import Toast from "./components/Toast/Toast";
 
 function App() {
   return (
-    <div>
+    <div className="app-layout">
       <AuthProvider>
         <BrowserRouter>
           <Navigation></Navigation>
+          <Toast />
+          <main className="app-main">
           <Switch>
             <Route exact path="/">
               <Home></Home>
@@ -33,6 +39,9 @@ function App() {
             </Route>
             <Route exact path="/shop">
               <Shop></Shop>
+            </Route>
+            <Route path="/products/:id">
+              <ProductDetail></ProductDetail>
             </Route>
             <Route exact path="/explore">
               <Explore></Explore>
@@ -49,11 +58,17 @@ function App() {
             <Route path="/register">
               <Register></Register>
             </Route>
+            <Route path="/verify-email">
+              <VerifyEmail></VerifyEmail>
+            </Route>
             <PrivateRoute path="/dashboard">
               <Dashboard></Dashboard>
             </PrivateRoute>
             <PrivateRoute path="/cart">
               <Cart></Cart>
+            </PrivateRoute>
+            <PrivateRoute path="/wishlist">
+              <Wishlist></Wishlist>
             </PrivateRoute>
             <PrivateRoute path="/checkout">
               <Checkout></Checkout>
@@ -65,6 +80,7 @@ function App() {
               <NotFound></NotFound>
             </Route>
           </Switch>
+          </main>
           <Footer></Footer>
         </BrowserRouter>
       </AuthProvider>

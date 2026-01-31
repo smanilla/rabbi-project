@@ -104,7 +104,7 @@ const Checkout = () => {
       const orderData = {
         email: user.email,
         items: cartItems,
-        shipping: {
+        shippingAddress: {
           fullName: formData.fullName,
           email: formData.email,
           phone: formData.phone,
@@ -118,7 +118,7 @@ const Checkout = () => {
           status: formData.paymentMethod === "cash" ? "pending" : "pending",
         },
         subtotal: calculateSubtotal(),
-        shipping: calculateShipping(),
+        shippingCost: calculateShipping(),
         total: calculateTotal(),
         notes: formData.notes,
       };

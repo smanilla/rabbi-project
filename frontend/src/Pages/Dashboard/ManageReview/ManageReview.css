@@ -1,0 +1,11 @@
+.manage-review-thumb {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.manage-review-text {
+  max-width: 220px;
+  font-size: 0.9rem;
+}

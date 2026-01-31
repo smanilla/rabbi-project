@@ -1,23 +1,131 @@
+/* Section - match home page featured section */
 .review-main {
-  margin: 50px;
+  padding: 80px 0;
+  background: #f8f9fa;
 }
-.review-title h6,
-h1 {
+
+.review-title {
+  margin-bottom: 50px;
+}
+
+.review-title h6 {
+  font-weight: 600;
+  color: #666;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.review-title h1 {
   font-weight: 700;
+  color: #333;
+  font-size: 42px;
 }
 
+/* Grid - responsive cards like product section */
+.review-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+  max-width: 1200px;
+}
+
+/* Card - match product card style */
 .review-card {
-  box-shadow: rgba(0, 0, 0, 0.08) 0px 4px 12px;
-  padding: 10px;
-  border-radius: 10px;
-  margin: 0 auto;
-  width: 650px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 24px;
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  height: 100%;
 }
 
-.review-card img {
+.review-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* Avatar - image or dummy icon */
+.review-card-avatar {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+}
+
+.review-card-avatar img {
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
+  object-fit: cover;
+}
+
+.review-card-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #e9ecef;
+  color: #6c757d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+}
+
+/* Card body */
+.review-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.review-card-name {
+  font-weight: 700;
+  color: #333;
+  font-size: 1.1rem;
+  margin-bottom: 8px;
+}
+
+.review-card-text {
+  color: #666;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin: 12px 0 0;
 }
 
 .rating-star {
-  color: rgba(243, 211, 27, 0.979);
+  color: rgba(243, 211, 27, 0.98);
+  font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .review-main {
+    padding: 50px 0;
+  }
+
+  .review-title h1 {
+    font-size: 32px;
+  }
+
+  .review-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .review-card {
+    padding: 20px;
+  }
+
+  .review-card-avatar,
+  .review-card-avatar-placeholder {
+    width: 56px;
+    height: 56px;
+  }
+
+  .review-card-avatar-placeholder {
+    font-size: 24px;
+  }
 }

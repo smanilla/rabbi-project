@@ -46,39 +46,12 @@ const useAuthBackend = () => {
         throw new Error(data.error || "Registration failed");
       }
 
-      // Auto login after registration
-      const loginResponse = await fetch(`${API_URL}/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
+      // Registration successful - email verification sent (no auto-login)
+      setRegiError("");
+      return Promise.resolve({
+        success: true,
+        message: data.message || "Please check your email to verify your account.",
       });
-
-      // Check login response is JSON
-      const loginContentType = loginResponse.headers.get("content-type");
-      if (!loginContentType || !loginContentType.includes("application/json")) {
-        const text = await loginResponse.text();
-        console.error("Non-JSON login response:", text);
-        throw new Error("Server error: Invalid response format. Make sure backend is running.");
-      }
-
-      const loginData = await loginResponse.json();
-
-      if (loginResponse.ok && loginData.success) {
-        const userData = {
-          email: loginData.user.email,
-          displayName: loginData.user.name,
-          name: loginData.user.name,
-          role: loginData.user.role,
-        };
-        setUser(userData);
-        localStorage.setItem("user", JSON.stringify(userData));
-        setRegiError("");
-        return Promise.resolve({ user: userData });
-      } else {
-        throw new Error(loginData.error || "Auto-login failed");
-      }
     } catch (error) {
       // Handle network errors
       if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {

@@ -27,27 +27,24 @@ async function seedAdmin() {
     const existingUser = await userCollection.findOne({ email: adminUser.email });
 
     if (existingAuth || existingUser) {
-      console.log("⚠️  Admin user already exists!");
-      console.log("📧 Email:", adminUser.email);
-      console.log("🔑 Password:", adminUser.password);
-      console.log("\nYou can use these credentials to login.");
-      
-      // Update to ensure admin role
+      console.log("⚠️  Admin user already exists. Updating role and password to ensure credentials work.");
+      const hashedPassword = await bcrypt.hash(adminUser.password, 10);
+      if (existingAuth) {
+        await authCollection.updateOne(
+          { email: adminUser.email },
+          { $set: { password: hashedPassword, name: adminUser.name, emailVerified: true } }
+        );
+        console.log("✅ Password reset in auth collection");
+      }
       if (existingUser) {
         await userCollection.updateOne(
           { email: adminUser.email },
-          { $set: { role: "admin", updatedAt: new Date() } }
+          { $set: { role: "admin", name: adminUser.name, updatedAt: new Date() } }
         );
         console.log("✅ Admin role confirmed in users collection");
       }
-      
-      // Update password if needed (optional - uncomment to reset password)
-      // const hashedPassword = await bcrypt.hash(adminUser.password, 10);
-      // await authCollection.updateOne(
-      //   { email: adminUser.email },
-      //   { $set: { password: hashedPassword } }
-      // );
-      
+      console.log("\n📧 Email:    " + adminUser.email);
+      console.log("🔑 Password: " + adminUser.password);
       await client.close();
       return;
     }
@@ -55,11 +52,12 @@ async function seedAdmin() {
     // Hash password
     const hashedPassword = await bcrypt.hash(adminUser.password, 10);
 
-    // Create admin in auth collection
+    // Create admin in auth collection (pre-verified)
     const authResult = await authCollection.insertOne({
       email: adminUser.email,
       password: hashedPassword,
       name: adminUser.name,
+      emailVerified: true,
       createdAt: new Date()
     });
 

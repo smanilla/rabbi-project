@@ -30,6 +30,8 @@ const ManageProducts = () => {
     variations: [],
   });
   const [alert, setAlert] = useState({ show: false, message: "", type: "" });
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = React.useRef(null);
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -109,6 +111,10 @@ const ManageProducts = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.img || !formData.img.trim()) {
+      showAlert("Please set a product image (URL or upload)", "danger");
+      return;
+    }
 
     try {
       const productData = {
@@ -165,6 +171,35 @@ const ManageProducts = () => {
       ...formData,
       [name]: type === "checkbox" ? checked : value,
     });
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith("image/")) {
+      showAlert("Please select an image file (JPEG, PNG, etc.)", "danger");
+      return;
+    }
+    try {
+      setUploadingImage(true);
+      const formDataUpload = new FormData();
+      formDataUpload.append("image", file);
+      const response = await fetch(`${API_BASE_URL}/upload/image`, {
+        method: "POST",
+        body: formDataUpload,
+      });
+      const data = await response.json();
+      if (data.success && data.imageUrl) {
+        setFormData((prev) => ({ ...prev, img: data.imageUrl }));
+        showAlert("Image uploaded. You can save the product.", "success");
+      } else {
+        showAlert(data.error || "Upload failed", "danger");
+      }
+    } catch (err) {
+      showAlert("Failed to upload image", "danger");
+    } finally {
+      setUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   return (
@@ -293,14 +328,26 @@ const ManageProducts = () => {
               </Row>
 
               <Form.Group className="mb-3">
-                <Form.Label>Image URL *</Form.Label>
+                <Form.Label>Drone / Product Image *</Form.Label>
                 <Form.Control
                   type="url"
                   name="img"
                   value={formData.img}
                   onChange={handleInputChange}
-                  required
+                  placeholder="https://example.com/drone.jpg or upload below"
                 />
+                <div className="mt-2 mb-2">
+                  <Form.Label className="small text-muted">Or upload image (max 5MB)</Form.Label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={uploadingImage}
+                    className="form-control"
+                  />
+                  {uploadingImage && <span className="small text-muted">Uploading…</span>}
+                </div>
                 {formData.img && (
                   <img
                     src={formData.img}

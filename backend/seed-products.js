@@ -124,8 +124,16 @@ async function seedProducts() {
     // Clear existing products (optional - comment out if you want to keep existing)
     // await collection.deleteMany({});
 
+    const now = new Date();
+    const productsToInsert = dummyProducts.map((p, i) => ({
+      ...p,
+      featured: i < 6, // first 6 as featured for home page
+      createdAt: now,
+      updatedAt: now,
+    }));
+
     // Insert dummy products
-    const result = await collection.insertMany(dummyProducts);
+    const result = await collection.insertMany(productsToInsert);
     console.log(`✅ Successfully inserted ${result.insertedCount} products`);
     
     // Display inserted products

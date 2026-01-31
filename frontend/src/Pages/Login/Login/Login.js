@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Col, Container, Form, Row, Button } from "react-bootstrap";
+import { Col, Container, Form, Row, Button, Alert, InputGroup } from "react-bootstrap";
 import { useHistory, useLocation } from "react-router";
 import { Link } from "react-router-dom";
 import useAuth from "./../../../hooks/useAuth";
@@ -7,12 +7,16 @@ import useAuth from "./../../../hooks/useAuth";
 import bg from "../../../images/login.svg";
 import "./Login.css";
 
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
 const Login = () => {
-  const { signInUsingGoogle, processLogin, setIsLoading, handleUserInfo } =
-    useAuth();
+  const { processLogin, setIsLoading, handleUserInfo } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [logInError, setLogInError] = useState("");
+  const [resendMessage, setResendMessage] = useState("");
+  const [resending, setResending] = useState(false);
   const isMountedRef = useRef(true);
 
   const history = useHistory();
@@ -26,27 +30,6 @@ const Login = () => {
     };
   }, []);
 
-  const handleGoogleSignIn = () => {
-    setIsLoading(true);
-    signInUsingGoogle()
-      .then((result) => {
-        if (isMountedRef.current && result && result.user) {
-          handleUserInfo(result.user.email, "PUT");
-          history.push(redirect_url);
-        }
-      })
-      .catch((error) => {
-        if (isMountedRef.current) {
-          setLogInError(error.message);
-        }
-      })
-      .finally(() => {
-        if (isMountedRef.current) {
-          setIsLoading(false);
-        }
-      });
-  };
-
   const handleEmailLogIn = (e) => {
     setEmail(e.target.value);
   };
@@ -56,8 +39,7 @@ const Login = () => {
 
   const handleLogIn = (e) => {
     e.preventDefault();
-    
-    // Validate inputs before submitting
+    setResendMessage("");
     if (!email || !password) {
       setLogInError("Please enter both email and password");
       return;
@@ -84,6 +66,36 @@ const Login = () => {
       });
   };
 
+  const isEmailNotVerifiedError =
+    logInError &&
+    (logInError.toLowerCase().includes("verify your email") ||
+      logInError.toLowerCase().includes("verification"));
+
+  const handleResendVerification = async () => {
+    if (!email) return;
+    setResending(true);
+    setResendMessage("");
+    try {
+      const response = await fetch(`${API_URL}/resend-verification-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (isMountedRef.current) {
+        if (response.ok && data.success) {
+          setResendMessage(data.message || "Verification email sent. Check your inbox.");
+        } else {
+          setResendMessage(data.error || "Failed to send. Try again.");
+        }
+      }
+    } catch (err) {
+      if (isMountedRef.current) setResendMessage("Failed to send. Try again.");
+    } finally {
+      if (isMountedRef.current) setResending(false);
+    }
+  };
+
   return (
     <>
       <Container className="py-4 my-5">
@@ -106,18 +118,44 @@ const Login = () => {
               </Form.Group>
               <Form.Group className="mb-3" controlId="BasicPassword">
                 <Form.Label>PASSWORD</Form.Label>
-                <Form.Control
-                  type="password"
-                  value={password}
-                  onChange={handlePasswordLogIn}
-                  placeholder="..........."
-                  required
-                />
+                <InputGroup>
+                  <Form.Control
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={handlePasswordLogIn}
+                    placeholder="..........."
+                    required
+                  />
+                  <InputGroup.Text
+                    onClick={() => setShowPassword((p) => !p)}
+                    style={{ cursor: "pointer", userSelect: "none" }}
+                    title={showPassword ? "Hide password" : "Show password"}
+                  >
+                    <i className={`fa ${showPassword ? "fa-eye-slash" : "fa-eye"}`} aria-hidden="true" />
+                  </InputGroup.Text>
+                </InputGroup>
               </Form.Group>
               {logInError && (
-                <div className="alert alert-danger" role="alert">
+                <Alert variant="danger">
                   {logInError}
-                </div>
+                  {isEmailNotVerifiedError && (
+                    <div className="mt-2">
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        onClick={handleResendVerification}
+                        disabled={resending || !email}
+                      >
+                        {resending ? "Sending…" : "Resend verification email"}
+                      </Button>
+                    </div>
+                  )}
+                </Alert>
+              )}
+              {resendMessage && (
+                <Alert variant={resendMessage.includes("Failed") ? "danger" : "success"} className="mt-2">
+                  {resendMessage}
+                </Alert>
               )}
               <div className="d-grid gap-2 my-4">
                 <Button variant="secondary" type="submit">
@@ -129,11 +167,6 @@ const Login = () => {
                 <Link to="/register"> Sign Up</Link>
               </div>
             </Form>
-            <div className="text-center">
-              <Button className="btn-regular me-3" onClick={handleGoogleSignIn}>
-                <i className="fab fa-google"></i> Continue with google
-              </Button>
-            </div>
           </Col>
         </Row>
       </Container>

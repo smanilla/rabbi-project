@@ -14,34 +14,43 @@ const Home = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
 
   useEffect(() => {
-    fetchFeaturedProducts();
-  }, []);
-
-  const fetchFeaturedProducts = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/products/featured`);
-      if (response.ok) {
-        const data = await response.json();
-        setFeaturedProducts(Array.isArray(data) ? data.slice(0, 8) : []);
-      } else {
-        // Fallback to latest products
-        const fallbackResponse = await fetch(`${API_BASE_URL}/products?sortBy=createdAt&sortOrder=desc&limit=8`);
-        const fallbackData = await fallbackResponse.json();
-        setFeaturedProducts(fallbackData.products || (Array.isArray(fallbackData) ? fallbackData.slice(0, 8) : []));
-      }
-    } catch (error) {
-      console.error("Error fetching featured products:", error);
-      // Try fallback
+    let cancelled = false;
+    const fetchFeaturedProducts = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/products?sortBy=createdAt&sortOrder=desc&limit=8`);
-        const data = await response.json();
-        setFeaturedProducts(data.products || (Array.isArray(data) ? data.slice(0, 8) : []));
-      } catch (err) {
-        console.error("Error fetching products:", err);
-        setFeaturedProducts([]);
+        const response = await fetch(`${API_BASE_URL}/products/featured`);
+        if (cancelled) return;
+        if (response.ok) {
+          const data = await response.json();
+          const list = Array.isArray(data) ? data.slice(0, 8) : [];
+          if (!cancelled) setFeaturedProducts(list);
+        } else {
+          // Fallback to latest products
+          const fallbackResponse = await fetch(`${API_BASE_URL}/products?sortBy=createdAt&sortOrder=desc&limit=8`);
+          if (cancelled) return;
+          const fallbackData = await fallbackResponse.json();
+          const list = fallbackData.products || (Array.isArray(fallbackData) ? fallbackData.slice(0, 8) : []);
+          if (!cancelled) setFeaturedProducts(Array.isArray(list) ? list.slice(0, 8) : []);
+        }
+      } catch (error) {
+        if (cancelled) return;
+        console.error("Error fetching featured products:", error);
+        try {
+          const response = await fetch(`${API_BASE_URL}/products?sortBy=createdAt&sortOrder=desc&limit=8`);
+          if (cancelled) return;
+          const data = await response.json();
+          const list = data.products || (Array.isArray(data) ? data.slice(0, 8) : []);
+          if (!cancelled) setFeaturedProducts(Array.isArray(list) ? list.slice(0, 8) : []);
+        } catch (err) {
+          if (!cancelled) {
+            console.error("Error fetching products:", err);
+            setFeaturedProducts([]);
+          }
+        }
       }
-    }
-  };
+    };
+    fetchFeaturedProducts();
+    return () => { cancelled = true; };
+  }, []);
 
   const handleAddToCart = (product) => {
     console.log("Added to cart:", product);

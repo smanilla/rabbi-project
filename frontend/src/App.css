@@ -4,6 +4,16 @@
   font-family: "Poppins", sans-serif;
 }
 
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-main {
+  flex: 1 0 auto;
+}
+
 .App-logo {
   height: 40vmin;
   pointer-events: none;

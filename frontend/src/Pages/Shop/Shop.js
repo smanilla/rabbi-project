@@ -194,40 +194,42 @@ const Shop = () => {
             </div>
           </Col>
 
-          {/* Products Grid */}
-          <Col lg={9} md={8}>
-            {loading ? (
-              <div className="loading-container">
-                <Spinner animation="border" role="status">
-                  <span className="visually-hidden">Loading...</span>
-                </Spinner>
-              </div>
-            ) : filteredProducts.length === 0 ? (
-              <div className="no-products">
-                <h3>No products found</h3>
-                <p>Try adjusting your filters</p>
-              </div>
-            ) : (
-              <>
-                <div className="products-header">
-                  <p>
-                    Showing {filteredProducts.length} product
-                    {filteredProducts.length !== 1 ? "s" : ""}
-                  </p>
+          {/* Products Grid - fixed height container to prevent layout jump */}
+          <Col lg={9} md={8} className="shop-products-col">
+            <div className="shop-products-inner">
+              {loading ? (
+                <div className="loading-container">
+                  <Spinner animation="border" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </Spinner>
                 </div>
-                <Row>
-                  {filteredProducts.map((product) => (
-                    <Col key={product._id} xs={12} sm={6} lg={4}>
-                      <ProductCard
-                        product={product}
-                        onAddToCart={handleAddToCart}
-                        onAddToWishlist={handleAddToWishlist}
-                      />
-                    </Col>
-                  ))}
-                </Row>
-              </>
-            )}
+              ) : filteredProducts.length === 0 ? (
+                <div className="no-products">
+                  <h3>No products found</h3>
+                  <p>Try adjusting your filters</p>
+                </div>
+              ) : (
+                <>
+                  <div className="products-header">
+                    <p>
+                      Showing {filteredProducts.length} product
+                      {filteredProducts.length !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+                  <Row>
+                    {filteredProducts.map((product) => (
+                      <Col key={product._id} xs={12} sm={6} lg={4}>
+                        <ProductCard
+                          product={product}
+                          onAddToCart={handleAddToCart}
+                          onAddToWishlist={handleAddToWishlist}
+                        />
+                      </Col>
+                    ))}
+                  </Row>
+                </>
+              )}
+            </div>
           </Col>
         </Row>
       </Container>
