@@ -1,0 +1,17 @@
+{
+  "name": "rabbi",
+  "version": "1.0.0",
+  "description": "Full-stack application with React frontend and Express.js backend",
+  "scripts": {
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "frontend": "cd frontend && npm start",
+    "backend": "cd backend && npm start",
+    "install-all": "npm install && cd frontend && npm install && cd ../backend && npm install"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^7.6.0"
+  }
+}
