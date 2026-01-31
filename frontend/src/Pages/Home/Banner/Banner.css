@@ -1,0 +1,55 @@
+.slider-1 {
+  background-image: url(https://i.ibb.co/1X6N7kH/slider1.jpg);
+  background-size: cover;
+  background-position: center;
+}
+.slider-2 {
+  background-image: url(https://i.ibb.co/3vd829d/slider2.jpg);
+  background-size: cover;
+  background-position: center;
+}
+.slider-3 {
+  background-image: url(https://i.ibb.co/922JDVT/slide-carousel-2-image.jpg);
+  background-size: cover;
+  background-position: center;
+}
+
+.slider-title {
+  padding: 350px;
+}
+.slider-title h1 {
+  color: #fff;
+  font-size: 45px;
+  text-transform: uppercase;
+  margin: 10px 0;
+  font-weight: 700;
+}
+
+.slider-title p {
+  color: #fff;
+}
+
+.btn {
+  color: #fff;
+  border: 3px solid #fff;
+  border-radius: 0;
+}
+
+.btn:hover {
+  border: 3px solid yellow;
+  color: yellow;
+}
+
+.learn-btn {
+  margin-right: 15px;
+}
+
+@media only screen and (max-width: 768px) {
+  .slider-title {
+    padding: 30px;
+  }
+
+  .slider-title h1 {
+    font-size: 30px;
+  }
+}

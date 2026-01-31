@@ -1,0 +1,42 @@
+.intro-title {
+  font-weight: 700;
+  font-size: 55px;
+}
+
+.intro-text {
+  width: 40%;
+}
+.intro-text h3 {
+  font-size: 36px;
+  font-weight: 700;
+  margin: 30px 0;
+}
+
+.intro-text p {
+  font-weight: 300;
+  color: gray;
+}
+
+.contact-us-btn {
+  background: transparent;
+  border: 3px solid black;
+  padding: 7px 13px;
+}
+
+.contact-us-btn:hover {
+  color: #fff;
+  background: black;
+}
+
+@media only screen and (max-width: 768px) {
+  .intro-title {
+    font-size: 35px;
+  }
+  .intro-text {
+    width: 90%;
+  }
+
+  .intro-text h3 {
+    font-size: 30px;
+  }
+}

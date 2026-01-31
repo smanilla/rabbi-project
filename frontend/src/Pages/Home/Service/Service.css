@@ -1,0 +1,33 @@
+.card {
+  border: none;
+}
+.card img {
+  -webkit-transform: scale(1);
+  transform: scale(1);
+  -webkit-transition: 0.3s ease-in-out;
+  transition: 0.3s ease-in-out;
+  height: 350px;
+}
+
+.card img:hover {
+  -webkit-transform: scale(1.2);
+  transform: scale(1.2);
+}
+
+.price {
+  font-size: 20px;
+  color: orange;
+}
+
+.btn-buy {
+  border: 2px solid black;
+  color: black;
+  padding: 7px 13px;
+  text-transform: uppercase;
+  background: transparent;
+}
+
+.btn-buy:hover {
+  color: #fff;
+  background: black;
+}

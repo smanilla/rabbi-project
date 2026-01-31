@@ -1,0 +1,49 @@
+.explore-page {
+  min-height: 100vh;
+  background: #f8f9fa;
+  padding-bottom: 50px;
+}
+
+.explore-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 60px 0;
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.explore-header h1 {
+  font-size: 48px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.explore-header p {
+  font-size: 18px;
+  opacity: 0.9;
+}
+
+.explore-content {
+  padding-top: 20px;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+@media (max-width: 768px) {
+  .explore-header {
+    padding: 40px 0;
+  }
+
+  .explore-header h1 {
+    font-size: 28px;
+  }
+
+  .explore-header p {
+    font-size: 16px;
+  }
+}

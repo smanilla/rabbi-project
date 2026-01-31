@@ -1,0 +1,127 @@
+.checkout-page {
+  min-height: 70vh;
+  background-color: #f8f9fa;
+}
+
+.checkout-page h1 {
+  color: #333;
+  font-weight: 700;
+  margin-bottom: 30px;
+}
+
+.checkout-page .card {
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.checkout-page .card-header {
+  background-color: #fff;
+  border-bottom: 2px solid #e9ecef;
+  padding: 20px;
+}
+
+.checkout-page .card-header h4 {
+  margin: 0;
+  color: #333;
+  font-weight: 600;
+}
+
+.checkout-page .card-body {
+  padding: 25px;
+}
+
+.checkout-page .form-label {
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 8px;
+}
+
+.checkout-page .form-control {
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  padding: 10px 15px;
+}
+
+.checkout-page .form-control:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.checkout-page .form-check {
+  padding: 12px;
+  margin-bottom: 8px;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  transition: all 0.3s;
+}
+
+.checkout-page .form-check:hover {
+  background-color: #f8f9fa;
+  border-color: #007bff;
+}
+
+.checkout-page .form-check-input:checked {
+  background-color: #007bff;
+  border-color: #007bff;
+}
+
+.order-summary {
+  position: sticky;
+  top: 20px;
+}
+
+.order-items {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
+.order-item {
+  padding: 10px 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.order-item:last-child {
+  border-bottom: none;
+}
+
+.order-item h6 {
+  font-size: 14px;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+.summary-row.total {
+  font-size: 20px;
+  font-weight: 700;
+  color: #333;
+  padding-top: 12px;
+  border-top: 2px solid #e9ecef;
+  margin-top: 12px;
+}
+
+@media (max-width: 992px) {
+  .order-summary {
+    position: static;
+    margin-top: 30px;
+  }
+}
+
+@media (max-width: 768px) {
+  .checkout-page .card-body {
+    padding: 15px;
+  }
+
+  .checkout-page h1 {
+    font-size: 24px;
+  }
+}

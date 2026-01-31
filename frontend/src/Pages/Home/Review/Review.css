@@ -1,0 +1,23 @@
+.review-main {
+  margin: 50px;
+}
+.review-title h6,
+h1 {
+  font-weight: 700;
+}
+
+.review-card {
+  box-shadow: rgba(0, 0, 0, 0.08) 0px 4px 12px;
+  padding: 10px;
+  border-radius: 10px;
+  margin: 0 auto;
+  width: 650px;
+}
+
+.review-card img {
+  border-radius: 50%;
+}
+
+.rating-star {
+  color: rgba(243, 211, 27, 0.979);
+}

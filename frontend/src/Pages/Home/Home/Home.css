@@ -1,0 +1,38 @@
+.home-page {
+  overflow-x: hidden;
+}
+
+.featured-products-section {
+  padding: 80px 0;
+  background: #f8f9fa;
+}
+
+.section-header {
+  margin-bottom: 50px;
+}
+
+.section-header h2 {
+  font-size: 42px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.section-header p {
+  font-size: 18px;
+  color: #666;
+}
+
+@media (max-width: 768px) {
+  .featured-products-section {
+    padding: 50px 0;
+  }
+
+  .section-header h2 {
+    font-size: 32px;
+  }
+
+  .section-header p {
+    font-size: 16px;
+  }
+}

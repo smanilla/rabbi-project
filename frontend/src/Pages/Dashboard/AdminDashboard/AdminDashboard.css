@@ -1,0 +1,139 @@
+.admin-dashboard {
+  min-height: 100vh;
+  background: #f5f7fa;
+  padding: 30px 0;
+}
+
+.dashboard-header {
+  margin-bottom: 30px;
+}
+
+.dashboard-header h1 {
+  font-size: 36px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.dashboard-header p {
+  font-size: 16px;
+  color: #666;
+}
+
+.stats-row {
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  height: 100%;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.stat-card-success {
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  color: white;
+}
+
+.stat-card-info {
+  background: linear-gradient(135deg, #3494e6 0%, #ec6ead 100%);
+  color: white;
+}
+
+.stat-card-warning {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+}
+
+.stat-card-danger {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  color: white;
+}
+
+.stat-card .card-body {
+  text-align: center;
+  padding: 30px 20px;
+}
+
+.stat-icon {
+  font-size: 48px;
+  margin-bottom: 15px;
+}
+
+.stat-card h3 {
+  font-size: 36px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.stat-card p {
+  font-size: 16px;
+  margin: 0;
+  opacity: 0.9;
+}
+
+.quick-actions-card {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+}
+
+.quick-actions-card .card-header {
+  background: white;
+  border-bottom: 2px solid #f0f0f0;
+  padding: 20px;
+}
+
+.quick-actions-card .card-header h4 {
+  margin: 0;
+  font-weight: 600;
+  color: #333;
+}
+
+.quick-action-item {
+  text-align: center;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.quick-action-item:hover {
+  background: #e9ecef;
+  transform: translateY(-3px);
+}
+
+.action-icon {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+.quick-action-item p {
+  margin: 0;
+  font-weight: 500;
+  color: #333;
+}
+
+@media (max-width: 768px) {
+  .dashboard-header h1 {
+    font-size: 28px;
+  }
+
+  .stat-card h3 {
+    font-size: 28px;
+  }
+}

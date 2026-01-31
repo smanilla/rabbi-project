@@ -1,0 +1,40 @@
+.card img {
+  width: 80%;
+}
+
+.from-area form {
+  display: flex;
+  flex-direction: column;
+}
+
+.from-area form input,
+textarea {
+  margin-bottom: 10px;
+  border-radius: 5px;
+  border: none;
+  background: rgba(128, 128, 128, 0.075);
+  padding: 5px;
+  width: 350px;
+}
+
+.form-title {
+  font-weight: 700;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+}
+.from-area form .submit {
+  background: transparent;
+  color: black;
+  border: 2px solid black;
+}
+
+.from-area form .submit:hover {
+  background: black;
+  color: #fff;
+}
+
+@media only screen and (max-width: 768px) {
+  .card img {
+    width: 100%;
+  }
+}

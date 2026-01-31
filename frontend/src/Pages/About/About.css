@@ -1,0 +1,15 @@
+.about-items h6 {
+  color: rgb(226, 122, 32);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.about-items h1 {
+  font-size: 42px;
+  font-weight: 700;
+  margin-bottom: 40px;
+}
+
+.about-img img {
+  border-radius: 5px;
+}

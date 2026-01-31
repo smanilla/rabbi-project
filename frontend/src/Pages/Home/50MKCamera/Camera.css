@@ -1,0 +1,39 @@
+.camera-main {
+  background: linear-gradient(135deg, #f5d76e 0%, #f7dc6f 100%);
+  margin-top: 100px;
+  padding: 50px;
+  background-size: cover;
+}
+
+.camera-img img {
+  position: relative;
+  top: -90px;
+  left: 330px;
+}
+
+.camera-txt {
+  position: relative;
+  top: 180px;
+}
+
+.camera-txt h3 {
+  font-size: 40px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+.lens img {
+  margin-bottom: 20px;
+}
+
+@media only screen and (max-width: 768px) {
+  .camera-img img {
+    position: relative;
+    top: -90px;
+    left: 0px;
+    width: 300px;
+  }
+  .camera-txt {
+    position: relative;
+    top: 20px;
+  }
+}
